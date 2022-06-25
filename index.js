@@ -2,10 +2,9 @@ import express from 'express';
 import multer from 'multer';
 import mongoose from 'mongoose';
 import {loginValidation, registerValidation} from './validations/Auth.js';
-import checkAuth from './utils/CheckAuth.js';
-import * as UserController from "./controllers/UserController.js";
-import * as PostController from "./controllers/PostController.js";
-import {postCreateValidation} from "./validations/Post.js";
+import {UserController, PostController} from './controllers/Index.js';
+import {postCreateValidation} from './validations/Post.js';
+import {handleValidationError, checkAuth} from './utils/Index.js';
 
 
 mongoose
@@ -24,13 +23,13 @@ const storage = multer.diskStorage({
     },
 });
 
-const upload = multer({ storage })
+const upload = multer({storage})
 
 app.use(express.json()) //для чтения json данных
 app.use('/uploads', express.static('uploads'));
 
-app.post('/auth/login', loginValidation, UserController.login);
-app.post('/auth/register', registerValidation, UserController.register);
+app.post('/auth/login', loginValidation, handleValidationError, UserController.login);
+app.post('/auth/register', registerValidation, handleValidationError, UserController.register);
 app.get('/auth/me', checkAuth, UserController.getMe)
 
 app.post('/upload', checkAuth, upload.single('image'), (req, res) => {
@@ -42,9 +41,9 @@ app.post('/upload', checkAuth, upload.single('image'), (req, res) => {
 
 app.get('/posts', PostController.getAll);
 app.get('/posts/:id', PostController.getOne);
-app.post('/posts', checkAuth, postCreateValidation, PostController.create);
+app.post('/posts', checkAuth, postCreateValidation, handleValidationError, PostController.create);
 app.delete('/posts/:id', checkAuth, PostController.remove);
-app.patch('/posts/:id', checkAuth, PostController.update)
+app.patch('/posts/:id', checkAuth, postCreateValidation, handleValidationError, PostController.update)
 
 app.listen(3001, (err) => {
     if (err) {
